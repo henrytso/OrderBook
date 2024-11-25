@@ -1,74 +1,78 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { useState, useEffect } from "react";
+import { Text, View, StyleSheet, FlatList } from "react-native";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import SearchBar from "../components/SearchBar";
+import Product from "../components/Product";
+import ProductList from "../components/ProductList";
+import ProductDetailsModal from "../components/ProductDetailsModal";
 
-export default function HomeScreen() {
+const HomeScreen = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [cart, setCart] = useState<{ [key: number]: number }>({});
+  const [filterText, setFilterText] = useState("");
+  const [isProductDetailsModalVisible, setIsProductDetailsModalVisible] = useState<boolean>(false);
+  const [focusedProduct, setFocusedProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    const fetchProductsData = async () => {
+      const response = await fetch("https://retoolapi.dev/f0ee0v/items");
+      const data: Product[] = await response.json();
+      const cleanedData = data.filter((product) => product.name !== null);
+      setProducts(cleanedData);
+    };
+    fetchProductsData();
+  }, []);
+
+
+  const updateCart = (productId: number, count: number) => {
+    const newCart = { ...cart, [productId]: count };
+    if (newCart[productId] === 0) {
+      delete newCart[productId];
+    }
+    setCart(newCart);
+    console.log(newCart);
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View style={styles.container}>
+      <SearchBar filterText={filterText} onFilterTextChange={setFilterText} />
+      {products &&
+        <ProductList
+          products={products.filter((product) =>
+            product.name.toLowerCase().includes(filterText.toLowerCase())
+          )}
+          cart={cart}
+          updateCart={updateCart}
+          onProductPress={(product: Product) => {
+            setFocusedProduct(product);
+            setIsProductDetailsModalVisible(true);
+          }}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      }
+      <ProductDetailsModal
+        product={focusedProduct}
+        cart={cart}
+        updateCart={updateCart}
+        isVisible={isProductDetailsModalVisible}
+        onClose={() => setIsProductDetailsModalVisible(false)}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#436a80",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  text: {
+    color: "#ffffff",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  button: {
+    fontSize: 20,
+    textDecorationLine: "underline",
+    color: "#ffffff",
+  }
 });
+
+export default HomeScreen;
