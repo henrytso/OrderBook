@@ -15,3 +15,7 @@ Prerequisites: Node is installed. Expo Go is installed.
    ```bash
     npx expo start
    ```
+
+### Cart
+
+State of cart is logged in console whenever it is updated.
